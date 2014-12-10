@@ -60,14 +60,14 @@ var m = Math,dummyStyle = doc.createElement('div').style,
 			id:"slider",
 			scroll:true,//是否需要滑动
 			style:"default",//默认皮肤									
-			oneByOne:true,//是否需要 一月一月的滚动  true为需要  false为不需要
+			//oneByOne:true,//是否需要 一月一月的滚动  true为需要  false为不需要
 			container:"window",  //外层容器   默认为整个窗口   其它则填写对应的ID			
 			vScroll:true,//竖向
 			hScroll:false,//横向 
 			more:false,//是否显示加载更多按钮
 			moreName:"点击加载更多",//显示加载更多按钮上的文字
-			header:false,//是否需要头部
-			headerName:"选择日期",//头部显示名称
+			//header:false,//是否需要头部
+			//headerName:"选择日期",//头部显示名称
 			animateTime:500,//动画时间
 			onPullStart:function(){
 				console.log("执行拉动加载开始函数！");
@@ -83,6 +83,8 @@ var m = Math,dummyStyle = doc.createElement('div').style,
 			},
 			onPullDown:function(){
 				console.log("执行向下拉动加载函数！");
+			},loadMore:function() {//使用此函数请将参数scroll 设置为false  不允许滑动
+				console.log("加载更多...");
 			}
 		};
 		for(var i in options ){
@@ -135,6 +137,7 @@ var m = Math,dummyStyle = doc.createElement('div').style,
 			if(that.initFlag){
 				return;
 			}
+			seajs.use("./"+that.options.style+".css");
 			var slider=that.slider=that.$(that.options.id);			
 			var unit=that.unit="width";
 			var moveBy=that.moveBy="marginLeft";
@@ -143,6 +146,13 @@ var m = Math,dummyStyle = doc.createElement('div').style,
 				unit=that.unit="heightt";
 				moveBy=that.moveBy="marginTop";
 				moveStyleBy=that.moveStyleBy="margin-top";
+			}
+			if(that.options.more){
+				var elem=document.createElement("button");
+				elem.setAttribute("class","slider_more");
+				elem.setAttribute("id","slider_more");
+				elem.innerHTML=that.options.moreName;
+				that.slider.parentNode.appendChild(elem);
 			}
 			var wh={width:0,height:0};
 			if(that.options.container==="window"){
@@ -179,10 +189,8 @@ var m = Math,dummyStyle = doc.createElement('div').style,
 			
 			slider.parentNode.style[unit]=browserWidth+"px";
 			
-			seajs.use("./"+that.options.style+".css");
 
-			this.initFlag=true;
-			this.isSelectEnd=false;
+			that.initFlag=true;			
 
 			var scroll=that.options.scroll;
 			if(scroll){			
@@ -190,6 +198,8 @@ var m = Math,dummyStyle = doc.createElement('div').style,
 				that._bind(MOVE_EV,null,function(e){that.handlerEvent(e,that)});//绑定鼠标移动或触摸移动事件
 				that._bind(END_EV,null,function(e){that.handlerEvent(e,that)});//绑定鼠标弹上或触摸停止事件
 			}
+
+			that.bindSliderEvent();
 		},
 		show:function(){
 			var that=this;
@@ -203,10 +213,15 @@ var m = Math,dummyStyle = doc.createElement('div').style,
 			//that.sliderBg.style.display="block";
 			//that.reloadCalender(slider);
 			//that.bindCalenderEvent(slider);
-		},
-		appendList:function(type){//日历显示类型 是附加还是替换  append 附加   before 插入   replace替换
+		},		
+		bindSliderEvent:function(){//日历显示类型 是附加还是替换  append 附加   before 插入   replace替换
 	    	var that=this;
-			
+			var slider_more=that.$("slider_more");
+			if(slider_more){
+				slider_more.onclick=function(){//执行加载更多函数
+					if (that.options.loadMore){that.options.loadMore.call(that)};
+				};
+			}
 			//that.bindCalenderEvent(slider);			
 		},
 		handlerEvent:function(e,that){
@@ -274,7 +289,7 @@ var m = Math,dummyStyle = doc.createElement('div').style,
 			var that=this;
 			var slider=that.slider;
 			var moveBy=that.moveBy;
-			var browserWidth=that.browserWidth;
+			var browserWidth=that.browserWidth;//=that.slider.parentNode.offsetHeight;
 			if(that.isMoved){
 				e.preventDefault();			
 				that.isLoaded=false;//是否有加载数据
@@ -293,6 +308,8 @@ var m = Math,dummyStyle = doc.createElement('div').style,
 				if(isNaN(left)){
 					left=0;
 				}
+				//var parentHeight=that.slider.parentNode.offsetHeight;
+				var scrollHeight=browserWidth+Math.abs(left);
 				if(that.options.hScroll){
 					left=left+(eX-startPos.x);					
 				}else{
@@ -302,14 +319,16 @@ var m = Math,dummyStyle = doc.createElement('div').style,
 					left=0;
 					
 					if (that.options.onPullUp){that.options.onPullUp.call(that,e)};
-				}else if(Math.abs(left)+browserWidth>oHeight){
-					if(browserWidth>oHeight){
-						left=0;
-					}else{
-						left=browserWidth-oHeight;					
+				}else{
+					if(Math.abs(left)+browserWidth>oHeight){
+						if(browserWidth>oHeight){
+							left=0;
+						}else{
+							left=browserWidth-oHeight;					
+						}
 					}
-					if (that.options.onPullDown){that.options.onPullDown.call(that,e)};			
-				}
+					if (that.options.onPullDown){that.options.onPullDown.call(that,e)};
+				} 
 				/*if(that.options.oneByOne&&that.options.hScroll){
 					if(Math.abs(left%browserWidth/parseFloat(browserWidth))>=0.5){
 						left=Math.floor(left/browserWidth)*browserWidth;
@@ -333,15 +352,15 @@ var m = Math,dummyStyle = doc.createElement('div').style,
 					left=left-slider.parentNode.offsetTop;
 				}*/
 				that.slider.style[transitionDuration] = that.options.animateTime/1000+"s";
-				slider.style[moveBy]=left+"px";
-				var unit=that.unit;
+				slider.style[moveBy]=(left-10)+"px";
+				/*var unit=that.unit;
 				var sliderList=that.sliderList=slider.children;
 				var length=that.length=sliderList.length;
 				var browserWidth=that.browserWidth;
 				for(var i=0;i<length;i++){
 					sliderList[i].style[unit]=browserWidth-2+"px";
 				}
-				slider.style[unit]=browserWidth*length-15+"px";
+				slider.style[unit]=browserWidth*length-15+"px";*/
 			}			
 			that.isMouseDown=false;
 			if (that.options.onPullEnd){that.options.onPullEnd.call(that,e)};
