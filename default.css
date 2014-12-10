@@ -1,0 +1,24 @@
+.slider{
+	list-style: none;
+	line-height: 50px;
+	font-size: 14px;
+	margin: 0;
+	padding: 0;
+}
+
+.slider li{
+	height: 50px;
+	line-height: 50px;
+	background: #fff;
+	border-spacing: 0;
+	border-collapse: collapse;
+	border:1px solid #ccc;
+	border-top: none;
+	text-align: center;
+}
+.slider li.new{	
+	background: red;	
+}
+.slider li:nth-child(1){
+	border-top:1px solid #ccc;
+}
