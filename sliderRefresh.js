@@ -61,7 +61,8 @@ var m = Math,dummyStyle = doc.createElement('div').style,
 			scroll:true,//是否需要滑动
 			style:"default",//默认皮肤									
 			//oneByOne:true,//是否需要 一月一月的滚动  true为需要  false为不需要
-			container:"window",  //外层容器   默认为整个窗口   其它则填写对应的ID			
+			container:"window",  //外层容器   默认为整个窗口   其它则填写对应的ID	
+			debug:false,//是否开启调试模式		
 			vScroll:true,//竖向
 			hScroll:false,//横向 
 			more:false,//是否显示加载更多按钮
@@ -174,7 +175,9 @@ var m = Math,dummyStyle = doc.createElement('div').style,
 					browserWidth=that.browserWidth=wh.height;		
 				}
 			}else{
-				console.error("对不起，滚动方向请重新设置！");
+				if(that.options.debug){					
+					console.error("对不起，滚动方向请重新设置！");
+				}
 				slider.style.display="none";
 				return false;
 			}
@@ -191,15 +194,81 @@ var m = Math,dummyStyle = doc.createElement('div').style,
 			
 
 			that.initFlag=true;			
-
+			that.dataLoading=true;//有数据需要加载
 			var scroll=that.options.scroll;
 			if(scroll){			
 				that._bind(START_EV,null,function(e){that.handlerEvent(e,that)});//绑定鼠标按下或触摸开始事件
 				that._bind(MOVE_EV,null,function(e){that.handlerEvent(e,that)});//绑定鼠标移动或触摸移动事件
 				that._bind(END_EV,null,function(e){that.handlerEvent(e,that)});//绑定鼠标弹上或触摸停止事件
+				//that._bind("DOMMouseScroll",null,function(e){that.handlerEvent(e,that)});//绑定鼠标弹上或触摸停止事件
+					//window.addEventListener('DOMMouseScroll', wheel, false);
+					//window.onmousewheel = document.onmousewheel = wheel;
+				/*注册事件*/
+				if(document.addEventListener){
+				    document.addEventListener('DOMMouseScroll',function(e){that.wheelFunc(e);},false);
+				}//W3C
+				window.onmousewheel=document.onmousewheel=function(e){
+					that.wheelFunc(e);//IE/Opera/Chrome
+				};
 			}
 
 			that.bindSliderEvent();
+		},
+		wheelFunc:function(e){
+			var that=this;
+		 	var direct=0;
+			e=e || window.event;
+			var delta=0;
+		    if(e.wheelDelta){//IE/Opera/Chrome
+      			delta=e.wheelDelta/120;
+    		}else if(e.detail){//Firefox
+        		delta=-e.detail/3;
+        	}
+        	that.wheelHandler(delta);
+		},wheelHandler:function(delta){
+			var that=this;
+			var s = delta + ": ";
+			var slider=that.slider;
+			var moveBy=that.moveBy;
+			var browserWidth=that.browserWidth;//=that.slider.parentNode.offsetHeight;
+			var oHeight=0;
+			if(that.options.hScroll){
+				oHeight=slider.offsetWidth;
+			}else{
+				oHeight=slider.offsetHeight;
+			}
+			var left=parseFloat(slider.style[moveBy]);
+
+			if(isNaN(left)){
+				left=0;
+			}
+		    if (delta <0){
+		    	if(that.options.debug){
+		        	console.log(s +"您在向下滚……");		        
+		    	}
+		    }else{
+		    	if(that.options.debug){
+		    	 	console.log(s+"您在向上滚……");	
+		    	}
+		    }
+		    left=left+delta;
+		    if(left>0){
+		    	left=0;
+		    	if (that.options.onPullUp){that.options.onPullUp.call(that)};
+		    }else{
+		    	if(Math.abs(left)+browserWidth>oHeight){
+		    		if(browserWidth>oHeight){
+							left=0;
+					}else{
+						left=browserWidth-oHeight;					
+					}
+		    	}
+		    	if(that.dataLoading){						
+						if (that.options.onPullDown){that.options.onPullDown.call(that)};
+				}
+		    }
+		    that.slider.style[transitionDuration] = that.options.animateTime/1000+"s";
+			slider.style[moveBy]=left+"px";	    
 		},
 		show:function(){
 			var that=this;
@@ -290,6 +359,7 @@ var m = Math,dummyStyle = doc.createElement('div').style,
 			var slider=that.slider;
 			var moveBy=that.moveBy;
 			var browserWidth=that.browserWidth;//=that.slider.parentNode.offsetHeight;
+			var oHeight=0;
 			if(that.isMoved){
 				e.preventDefault();			
 				that.isLoaded=false;//是否有加载数据
@@ -327,7 +397,9 @@ var m = Math,dummyStyle = doc.createElement('div').style,
 							left=browserWidth-oHeight;					
 						}
 					}
-					if (that.options.onPullDown){that.options.onPullDown.call(that,e)};
+					if(that.dataLoading){						
+						if (that.options.onPullDown){that.options.onPullDown.call(that,e)};
+					}
 				} 
 				/*if(that.options.oneByOne&&that.options.hScroll){
 					if(Math.abs(left%browserWidth/parseFloat(browserWidth))>=0.5){

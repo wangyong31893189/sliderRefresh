@@ -1,6 +1,6 @@
 define(function(require, exports, module) {
 	var Slider=require("./sliderRefresh");
-	var slider=new Slider({"id":"slider","container":"container","animateTime":1000,"scroll":true,"more":true,"style":"default","vScroll":true,"hScroll":false,onPullUp:function(){
+	var slider=new Slider({"id":"slider","container":"container",debug:true,"animateTime":1000,"scroll":true,"more":true,"style":"default","vScroll":true,"hScroll":false,onPullUp:function(){
 		//window.location.reload();
 	},onPullDown:function() {
 		var listArr=[];
@@ -9,6 +9,7 @@ define(function(require, exports, module) {
 			listArr.push('<li class="new">新加测试拉动加载控件'+(length+i+1)+'</li>');
 		}
 		if(length>50){
+			slider.dataLoading=false;
 			return;
 		}
 		slider.slider.innerHTML+=listArr.join("");
@@ -19,6 +20,7 @@ define(function(require, exports, module) {
 			listArr.push('<li class="new">新加测试拉动加载控件'+(length+i+1)+'</li>');
 		}
 		if(length>50){
+			slider.dataLoading=false;
 			return;
 		}
 		slider.slider.innerHTML+=listArr.join("");
